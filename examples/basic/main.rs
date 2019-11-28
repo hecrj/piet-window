@@ -38,8 +38,14 @@ fn main() {
                     let mut renderer = frame.renderer();
                     renderer.clear(Color::WHITE);
 
+                    let size = window.inner_size();
                     let dpi = window.hidpi_factor();
+
                     renderer.transform(Affine::scale(dpi));
+                    renderer.transform(Affine::translate((
+                        (size.width - f64::from(picture::WIDTH)) / 2.0,
+                        (size.height - f64::from(picture::HEIGHT)) / 2.0,
+                    )));
 
                     picture::draw(&mut renderer).expect("Draw picture");
 

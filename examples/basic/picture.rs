@@ -6,6 +6,9 @@ use piet_common::{
     Text, TextLayout, TextLayoutBuilder,
 };
 
+pub const WIDTH: i32 = 200;
+pub const HEIGHT: i32 = 100;
+
 pub fn draw(rc: &mut impl RenderContext) -> Result<(), Error> {
     rc.clear(Color::WHITE);
     let brush = rc.solid_brush(Color::rgb8(0x00, 0x00, 0x80));
