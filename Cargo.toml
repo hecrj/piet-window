@@ -20,3 +20,6 @@ cairo-rs = { version = "0.7", default_features = false }
 
 [dev-dependencies]
 winit = { version = "0.20.0-alpha3", git = "https://github.com/rust-windowing/winit", rev = "709808eb4e69044705fcb214bcc30556db761405" }
+
+[patch.crates-io]
+cairo-sys-rs = { git = "https://github.com/hecrj/cairo.git" }
