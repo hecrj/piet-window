@@ -5,21 +5,18 @@ authors = ["Héctor Ramón Jiménez <hector0193@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-piet-common = { git = "https://github.com/hecrj/piet.git" }
+piet-common = "0.4"
 raw-window-handle = "0.3"
 
 [target.'cfg(any(target_os = "linux", target_os = "dragonfly", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))'.dependencies]
 x11 = "2.18"
-cairo-rs = { version = "0.7", default_features = false }
-cairo-sys-rs = { version = "0.9", features = ["xlib"] }
+cairo-rs = { version = "0.9", default_features = false }
+cairo-sys-rs = { version = "0.10", features = ["xlib"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.20"
 objc = "0.2"
-cairo-rs = { version = "0.7", default_features = false }
+cairo-rs = { version = "0.9", default_features = false }
 
 [dev-dependencies]
-winit = { version = "0.20.0-alpha3", git = "https://github.com/rust-windowing/winit", rev = "709808eb4e69044705fcb214bcc30556db761405" }
-
-[patch.crates-io]
-cairo-sys-rs = { git = "https://github.com/hecrj/cairo.git" }
+winit = { git = "https://github.com/iced-rs/winit.git" }

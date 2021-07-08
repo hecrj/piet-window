@@ -14,21 +14,19 @@ fn main() {
         .build(&event_loop)
         .expect("Open window");
 
-    let physical_size = window.inner_size().to_physical(window.hidpi_factor());
+    let physical_size = window.inner_size();
 
     let mut surface = Surface::new(
         &window,
-        physical_size.width.round() as usize,
-        physical_size.height.round() as usize,
+        physical_size.width as usize,
+        physical_size.height as usize,
     );
 
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
 
         match event {
-            Event::MainEventsCleared => {
-                window.request_redraw();
-            }
+            Event::MainEventsCleared => {}
             Event::RedrawRequested(_) => {
                 let draw_started = std::time::Instant::now();
 
@@ -36,15 +34,16 @@ fn main() {
                     let mut frame = surface.frame();
 
                     let mut renderer = frame.renderer();
-                    renderer.clear(Color::WHITE);
+                    renderer.clear(None, Color::WHITE);
 
-                    let size = window.inner_size();
-                    let dpi = window.hidpi_factor();
+                    let dpi = window.scale_factor();
+                    let size: winit::dpi::LogicalSize<f64> =
+                        window.inner_size().to_logical(dpi);
 
                     renderer.transform(Affine::scale(dpi));
                     renderer.transform(Affine::translate((
-                        (size.width - f64::from(picture::WIDTH)) / 2.0,
-                        (size.height - f64::from(picture::HEIGHT)) / 2.0,
+                        (size.width - picture::SIZE.width) / 2.0,
+                        (size.height - picture::SIZE.height) / 2.0,
                     )));
 
                     picture::draw(&mut renderer).expect("Draw picture");
@@ -58,12 +57,9 @@ fn main() {
                 WindowEvent::Resized(size) => {
                     let resize_started = std::time::Instant::now();
 
-                    let physical_size = size.to_physical(window.hidpi_factor());
+                    surface.resize(size.width as usize, size.height as usize);
 
-                    surface.resize(
-                        physical_size.width.round() as usize,
-                        physical_size.height.round() as usize,
-                    );
+                    window.request_redraw();
 
                     dbg!(std::time::Instant::now() - resize_started);
                 }

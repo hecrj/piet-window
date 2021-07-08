@@ -1,46 +1,56 @@
 use piet_common::kurbo::{
-    Affine, BezPath, Line, Point, Rect, RoundedRect, Vec2,
+    Affine, BezPath, Line, Point, Rect, RoundedRect, Size, Vec2,
 };
 use piet_common::{
-    Color, Error, FontBuilder, ImageFormat, InterpolationMode, RenderContext,
-    Text, TextLayout, TextLayoutBuilder,
+    Color, Error, FontFamily, ImageFormat, InterpolationMode, RenderContext,
+    Text, TextAttribute, TextLayout, TextLayoutBuilder,
 };
 
-pub const WIDTH: i32 = 200;
-pub const HEIGHT: i32 = 100;
+pub const SIZE: Size = Size::new(200., 100.);
+
+const BLUE: Color = Color::rgb8(0x00, 0x00, 0x80);
+const GREEN: Color = Color::rgb8(0x00, 0x80, 0x00);
+const BLUE_ALPHA: Color = Color::rgba8(0x00, 0x00, 0x80, 0xC0);
+const RED_ALPHA: Color = Color::rgba8(0x80, 0x00, 0x00, 0xC0);
+const YELLOW_ALPHA: Color = Color::rgba8(0xCF, 0xCF, 0x00, 0x60);
 
 pub fn draw(rc: &mut impl RenderContext) -> Result<(), Error> {
-    rc.clear(Color::WHITE);
-    let brush = rc.solid_brush(Color::rgb8(0x00, 0x00, 0x80));
-    rc.stroke(Line::new((10.0, 10.0), (100.0, 50.0)), &brush, 1.0);
+    rc.clear(None, Color::WHITE);
+    rc.stroke(Line::new((10.0, 10.0), (100.0, 50.0)), &BLUE, 1.0);
 
-    let mut path = BezPath::new();
-    path.move_to((50.0, 10.0));
-    path.quad_to((60.0, 50.0), (100.0, 90.0));
-    let brush = rc.solid_brush(Color::rgb8(0x00, 0x80, 0x00));
-    rc.stroke(path, &brush, 1.0);
+    let georgia = rc.text().font_family("Georgia").ok_or(Error::MissingFont)?;
 
-    let mut path = BezPath::new();
-    path.move_to((10.0, 20.0));
-    path.curve_to((10.0, 80.0), (100.0, 80.0), (100.0, 60.0));
-    let brush = rc.solid_brush(Color::rgba8(0x00, 0x00, 0x80, 0xC0));
-    rc.fill(path, &brush);
+    let path = arc1();
+    rc.stroke(path, &GREEN, 1.0);
 
-    rc.stroke(RoundedRect::new(145.0, 45.0, 185.0, 85.0, 5.0), &brush, 1.0);
+    let path = arc2();
+    rc.fill(path, &BLUE_ALPHA);
 
-    let font = rc.text().new_font_by_name("Segoe UI", 12.0).build()?;
-    let layout = rc.text().new_text_layout(&font, "Hello piet!").build()?;
-    let w: f64 = layout.width().into();
-    let brush = rc.solid_brush(Color::rgba8(0x80, 0x00, 0x00, 0xC0));
-    rc.draw_text(&layout, (80.0, 10.0), &brush);
+    rc.stroke(
+        RoundedRect::new(145.0, 45.0, 185.0, 85.0, 5.0),
+        &BLUE_ALPHA,
+        1.0,
+    );
 
-    rc.stroke(Line::new((80.0, 12.0), (80.0 + w, 12.0)), &brush, 1.0);
+    let layout = rc
+        .text()
+        .new_text_layout("Hello piet!")
+        .font(FontFamily::SYSTEM_UI, 12.0)
+        .default_attribute(TextAttribute::TextColor(RED_ALPHA))
+        .build()?;
+
+    let w: f64 = layout.size().width;
+    rc.draw_text(&layout, (80.0, 10.0));
+
+    rc.stroke(Line::new((80.0, 12.0), (80.0 + w, 12.0)), &RED_ALPHA, 1.0);
 
     rc.with_save(|rc| {
         rc.transform(Affine::rotate(0.1));
-        rc.draw_text(&layout, (80.0, 10.0), &brush);
+        rc.draw_text(&layout, (80.0, 10.0));
         Ok(())
     })?;
+
+    rc.blurred_rect(Rect::new(155.0, 55.0, 185.0, 85.0), 5.0, &Color::BLACK);
 
     let image_data = make_image_data(256, 256);
     let image =
@@ -51,11 +61,50 @@ pub fn draw(rc: &mut impl RenderContext) -> Result<(), Error> {
         InterpolationMode::Bilinear,
     );
 
+    // 3x3 px red image with a single blue pixel in the middle
+    #[rustfmt::skip]
+    let blue_dot_data = [
+        255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255,
+        255, 0, 0, 255, 0, 0, 255, 255, 255, 0, 0, 255,
+        255, 0, 0, 255, 255, 0, 0, 255, 255, 0, 0, 255,
+    ];
+    let blue_dot_image =
+        rc.make_image(3, 3, &blue_dot_data, ImageFormat::RgbaPremul)?;
+    // Draw using only the single blue pixel
+    rc.draw_image_area(
+        &blue_dot_image,
+        Rect::new(1.0, 1.0, 2.0, 2.0),
+        Rect::new(160.0, 20.0, 170.0, 30.0),
+        InterpolationMode::NearestNeighbor,
+    );
+
     let clip_path = star(Point::new(90.0, 45.0), 10.0, 30.0, 24);
+    rc.fill(&clip_path, &YELLOW_ALPHA);
     rc.clip(clip_path);
-    let layout = rc.text().new_text_layout(&font, "Clipped text").build()?;
-    rc.draw_text(&layout, (80.0, 50.0), &brush);
+
+    let layout = rc
+        .text()
+        .new_text_layout("CLIPPED")
+        .font(georgia, 8.0)
+        .default_attribute(TextAttribute::TextColor(RED_ALPHA))
+        .build()?;
+    rc.draw_text(&layout, (80.0, 50.0));
+
     Ok(())
+}
+
+fn arc1() -> BezPath {
+    let mut path = BezPath::new();
+    path.move_to((50.0, 10.0));
+    path.quad_to((60.0, 50.0), (100.0, 90.0));
+    path
+}
+
+fn arc2() -> BezPath {
+    let mut path = BezPath::new();
+    path.move_to((10.0, 20.0));
+    path.curve_to((10.0, 80.0), (100.0, 80.0), (100.0, 60.0));
+    path
 }
 
 // Note: this could be a Shape.
@@ -78,14 +127,25 @@ fn star(center: Point, inner: f64, outer: f64, n: usize) -> BezPath {
     result
 }
 
+// allows for nice vertical formatting for `result[ix + 0]`
+#[allow(clippy::identity_op)]
 fn make_image_data(width: usize, height: usize) -> Vec<u8> {
     let mut result = vec![0; width * height * 4];
     for y in 0..height {
+        let in_top = (y / (height / 2)) == 0;
         for x in 0..width {
+            let in_left = (x / (width / 2)) == 0;
             let ix = (y * width + x) * 4;
-            result[ix + 0] = x as u8;
-            result[ix + 1] = y as u8;
-            result[ix + 2] = !(x as u8);
+            // I love branching,so sue me
+            let (r, g, b) = match (in_top, in_left) {
+                (true, true) => (0xff, 0x00, 0x00),
+                (true, false) => (0x00, 0xff, 0x00),
+                (false, true) => (0x00, 0x00, 0xff),
+                (false, false) => (0x00, 0x00, 0x00),
+            };
+            result[ix + 0] = r;
+            result[ix + 1] = g;
+            result[ix + 2] = b;
             result[ix + 3] = 127;
         }
     }

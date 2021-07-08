@@ -35,6 +35,7 @@ impl Surface {
                         height as i32,
                     ),
                 )
+                .expect("Create surface")
             },
             #[cfg(target_os = "macos")]
             RawWindowHandle::MacOS(macos) => {
@@ -51,11 +52,13 @@ impl Surface {
             }
         };
 
-        let buffer = raw.create_similar(
-            cairo::Content::ColorAlpha,
-            width as i32,
-            height as i32,
-        );
+        let buffer = raw
+            .create_similar(
+                cairo::Content::ColorAlpha,
+                width as i32,
+                height as i32,
+            )
+            .expect("Create similar surface");
 
         Surface { raw, buffer }
     }
@@ -69,11 +72,14 @@ impl Surface {
             );
         }
 
-        self.buffer = self.raw.create_similar(
-            cairo::Content::ColorAlpha,
-            width as i32,
-            height as i32,
-        );
+        self.buffer = self
+            .raw
+            .create_similar(
+                cairo::Content::ColorAlpha,
+                width as i32,
+                height as i32,
+            )
+            .expect("Create similar surface");
     }
 
     pub fn frame(&mut self) -> Frame {
