@@ -16,7 +16,6 @@ cairo-sys-rs = { version = "0.10", features = ["xlib"] }
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.20"
 objc = "0.2"
-cairo-rs = { version = "0.9", default_features = false }
 
 [dev-dependencies]
 winit = { git = "https://github.com/iced-rs/winit.git" }

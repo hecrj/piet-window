@@ -1,14 +1,9 @@
-#[cfg_attr(
-    any(
-        target_os = "macos",
-        target_os = "linux",
-        target_os = "dragonfly",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-    ),
-    path = "cairo.rs"
-)]
+#[cfg(target_os = "linux")]
+#[path = "cairo.rs"]
+mod backend;
+
+#[cfg(any(target_os = "windows", target_os = "macos"))]
+#[path = "null.rs"]
 mod backend;
 
 pub use backend::*;
